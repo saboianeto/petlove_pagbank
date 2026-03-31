@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+<<<<<<< HEAD
 import 'package:petlove_pagbank/services/pagbank_tapon_service.dart';
 import 'package:petlove_pagbank/theme_provider.dart';
 import 'package:provider/provider.dart';
+=======
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+>>>>>>> 53179e4fc197272c22e3aba7abd655c55ee02463
 
 import 'settings_screen.dart';
 
@@ -49,6 +55,83 @@ class VendasStore {
   final List<Venda> _list = [];
   List<Venda> get vendas => List.unmodifiable(_list.reversed.toList());
   void add(Venda v) => _list.add(v);
+}
+
+// ─────────────────────────────────────────
+// TEMA E PERSONALIZAÇÃO
+// ─────────────────────────────────────────
+class AppStyleOption {
+  final String name;
+  final Color primary;
+  final Color surface;
+  final Color background;
+  final Color button;
+
+  const AppStyleOption({
+    required this.name,
+    required this.primary,
+    required this.surface,
+    required this.background,
+    required this.button,
+  });
+}
+
+class AppThemeService {
+  AppThemeService._();
+  static final AppThemeService instance = AppThemeService._();
+
+  final ValueNotifier<ThemeMode> themeMode = ValueNotifier(ThemeMode.light);
+  final ValueNotifier<AppStyleOption> style = ValueNotifier(
+    const AppStyleOption(
+      name: 'Petlove',
+      primary: Color(0xFF2D1060),
+      surface: Color(0xFFF0EEF5),
+      background: Color(0xFFF0EEF5),
+      button: Color(0xFF2D1060),
+    ),
+  );
+
+  static const List<AppStyleOption> presets = [
+    AppStyleOption(
+      name: 'Petlove Roxo',
+      primary: Color(0xFF2D1060),
+      surface: Color(0xFFF0EEF5),
+      background: Color(0xFFF0EEF5),
+      button: Color(0xFF2D1060),
+    ),
+    AppStyleOption(
+      name: 'Verde Floresta',
+      primary: Color(0xFF1A7A4A),
+      surface: Color(0xFFDFF5E8),
+      background: Color(0xFFF0FFF6),
+      button: Color(0xFF1A7A4A),
+    ),
+    AppStyleOption(
+      name: 'Azul Mar',
+      primary: Color(0xFF1155AA),
+      surface: Color(0xFFEAF3FF),
+      background: Color(0xFFF2F8FF),
+      button: Color(0xFF1155AA),
+    ),
+    AppStyleOption(
+      name: 'Laranja Energy',
+      primary: Color(0xFFE8901A),
+      surface: Color(0xFFFFF4E8),
+      background: Color(0xFFFFF8F0),
+      button: Color(0xFFE8901A),
+    ),
+    AppStyleOption(
+      name: 'Cinza Clássico',
+      primary: Color(0xFF464646),
+      surface: Color(0xFFF4F4F4),
+      background: Color(0xFFFAFAFA),
+      button: Color(0xFF464646),
+    ),
+  ];
+
+  void setStyle(AppStyleOption option) => style.value = option;
+  void setDarkMode(bool enabled) =>
+      themeMode.value = enabled ? ThemeMode.dark : ThemeMode.light;
 }
 
 // ─────────────────────────────────────────
@@ -139,19 +222,19 @@ class PrintService {
   /// Impressão REAL via WangPOS AIDL (Gertec GPOS780)
   static const _channel = MethodChannel('wangpos_printer');
 
-  static Future<void> imprimirGertec(
-      BuildContext context, Venda venda) async {
+  static Future<void> imprimirGertec(BuildContext context, Venda venda) async {
     try {
-      final ByteData logoData =
-          await rootBundle.load('assets/images/petlove_logo.png');
+      final ByteData logoData = await rootBundle.load(
+        'assets/images/petlove_logo.png',
+      );
       final Uint8List logoBytes = logoData.buffer.asUint8List();
 
       final String result = await _channel.invokeMethod('printReceipt', {
-        'codigo':     venda.codigo,
-        'valor':      venda.valor,
-        'tipo':       venda.tipo,
-        'dataHora':   venda.dataHoraFormatada,
-        'logoBytes':  logoBytes,
+        'codigo': venda.codigo,
+        'valor': venda.valor,
+        'tipo': venda.tipo,
+        'dataHora': venda.dataHoraFormatada,
+        'logoBytes': logoBytes,
       });
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -173,16 +256,90 @@ class PrintService {
       }
     }
   }
+
+  /// Impressão Nativa Android via plugin printing
+  static Future<void> imprimirAndroidNativa(
+    BuildContext context,
+    Venda venda,
+  ) async {
+    try {
+      final pdf = pw.Document();
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context ctx) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                'petlove',
+                style: pw.TextStyle(
+                  fontSize: 24,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 8),
+              pw.Text(
+                'COMPROVANTE DE PAGAMENTO',
+                style: pw.TextStyle(fontSize: 18),
+              ),
+              pw.Divider(),
+              pw.Text('Código  : #${venda.codigo}'),
+              pw.Text('Data    : ${venda.dataHoraFormatada}'),
+              pw.Text('Tipo    : ${venda.tipo}'),
+              pw.Text('Status  : APROVADO'),
+              pw.SizedBox(height: 12),
+              pw.Text(
+                'TOTAL   : R\$ ${venda.valor}',
+                style: pw.TextStyle(
+                  fontSize: 20,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Impressão nativa Android enviada com sucesso'),
+            backgroundColor: Color(0xFF1A7A4A),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro impressora nativa: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 }
 
 // ─────────────────────────────────────────
 // APP
 // ─────────────────────────────────────────
-class PetlovePOSApp extends StatelessWidget {
+class PetlovePOSApp extends StatefulWidget {
   const PetlovePOSApp({super.key});
 
   @override
+  State<PetlovePOSApp> createState() => _PetlovePOSAppState();
+}
+
+class _PetlovePOSAppState extends State<PetlovePOSApp> {
+  @override
   Widget build(BuildContext context) {
+<<<<<<< HEAD
     return ChangeNotifierProvider(
       create: (_) => ThemeProvider(),
       child: Consumer<ThemeProvider>(
@@ -211,6 +368,46 @@ class PetlovePOSApp extends StatelessWidget {
           );
         },
       ),
+=======
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: AppThemeService.instance.themeMode,
+      builder: (context, mode, _) {
+        return ValueListenableBuilder<AppStyleOption>(
+          valueListenable: AppThemeService.instance.style,
+          builder: (context, option, _) {
+            final lightTheme = ThemeData(
+              useMaterial3: true,
+              colorScheme: ColorScheme.fromSeed(seedColor: option.primary)
+                  .copyWith(
+                    primary: option.primary,
+                    secondary: option.button,
+                    background: option.background,
+                    surface: option.surface,
+                  ),
+            );
+            final darkTheme = ThemeData(
+              useMaterial3: true,
+              brightness: Brightness.dark,
+              colorScheme: ColorScheme.dark(
+                primary: option.primary,
+                secondary: option.button,
+                background: Colors.black,
+                surface: Colors.grey[850]!,
+              ),
+            );
+
+            return MaterialApp(
+              title: 'Petlove POS',
+              debugShowCheckedModeBanner: false,
+              theme: lightTheme,
+              darkTheme: darkTheme,
+              themeMode: mode,
+              home: const SplashScreen(),
+            );
+          },
+        );
+      },
+>>>>>>> 53179e4fc197272c22e3aba7abd655c55ee02463
     );
   }
 }
@@ -315,6 +512,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _clear() => setState(() => _raw = '');
 
+  @override
+  void initState() {
+    super.initState();
+    AppThemeService.instance.style.addListener(_refresh);
+    AppThemeService.instance.themeMode.addListener(_refresh);
+  }
+
+  @override
+  void dispose() {
+    AppThemeService.instance.style.removeListener(_refresh);
+    AppThemeService.instance.themeMode.removeListener(_refresh);
+    super.dispose();
+  }
+
+  void _refresh() {
+    if (mounted) setState(() {});
+  }
+
   String _formatValue(String raw) {
     if (raw.isEmpty) return '0,00';
     final p = raw.padLeft(3, '0');
@@ -346,14 +561,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final style = AppThemeService.instance.style.value;
     return Scaffold(
-      backgroundColor: const Color(0xFFF0EEF5),
+      backgroundColor: style.background,
       body: SafeArea(
         child: Column(
           children: [
             // HEADER
             Container(
-              color: const Color(0xFF2D1060),
+              color: style.primary,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -381,6 +597,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                       const SizedBox(width: 10),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const SettingsScreen(),
+                          ),
+                        ),
+                        icon: const Icon(Icons.settings, color: Colors.white),
+                        tooltip: 'Configurações',
+                        splashRadius: 20,
+                      ),
                       GestureDetector(
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute(
@@ -538,7 +764,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: ElevatedButton(
                         onPressed: _cobrar,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2D1060),
+                          backgroundColor:
+                              AppThemeService.instance.style.value.button,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -598,28 +825,57 @@ class PaymentScreen extends StatelessWidget {
       );
     }
 
-    final response = await srv.startCreditPayment(amount: valor);
-
-    if (!response.success) {
-      final snack = SnackBar(
-        content: Text('TAP ON CRÉDITO: ${response.message}'),
-        backgroundColor: Colors.red,
-      );
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(snack);
+    final available = await srv.isTapOnAvailable();
+    if (!available) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'TAP ON não instalado ou não disponível no terminal.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        title: Text('Iniciando TAP ON...'),
+        content: SizedBox(
+          height: 90,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ),
+    );
+
+    final response = await srv.startCreditPayment(amount: valor);
+
+    if (context.mounted) Navigator.of(context).pop();
+
+    final snack = SnackBar(
+      content: Text('TAP ON: ${response.message}'),
+      backgroundColor: response.success ? Colors.green : Colors.red,
+    );
+
     if (context.mounted) {
-      _finalizar(context, 'CREDIT TAP ON');
+      ScaffoldMessenger.of(context).showSnackBar(snack);
+      if (response.success) {
+        _finalizar(context, 'CREDIT TAP ON');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final style = AppThemeService.instance.style.value;
     return Scaffold(
-      backgroundColor: const Color(0xFFF0EEF5),
+      backgroundColor: style.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2D1060),
+        backgroundColor: style.primary,
         foregroundColor: Colors.white,
         title: GestureDetector(
           onTap: () => Navigator.of(context).popUntil((r) => r.isFirst),
@@ -633,10 +889,10 @@ class PaymentScreen extends StatelessWidget {
           child: Column(
             children: [
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'FORMA DE PAGAMENTO',
                 style: TextStyle(
-                  color: Color(0xFF2D1060),
+                  color: style.primary,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 2,
@@ -671,7 +927,7 @@ class PaymentScreen extends StatelessWidget {
                 icon: Icons.credit_card_rounded,
                 label: 'CRÉDITO',
                 sub: 'À vista ou parcelado',
-                color: const Color(0xFF2D1060),
+                color: AppThemeService.instance.style.value.primary,
                 onTap: () => _handleCreditTapOn(context),
               ),
               const SizedBox(height: 14),
@@ -679,7 +935,7 @@ class PaymentScreen extends StatelessWidget {
                 icon: Icons.contactless_rounded,
                 label: 'DÉBITO',
                 sub: 'Débito em conta',
-                color: const Color(0xFF1A7A4A),
+                color: AppThemeService.instance.style.value.button,
                 onTap: () => _finalizar(context, 'DÉBITO'),
               ),
               const Spacer(),
@@ -693,6 +949,90 @@ class PaymentScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────
+// SETTINGS SCREEN
+// ─────────────────────────────────────────
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final style = AppThemeService.instance.style.value;
+    final mode = AppThemeService.instance.themeMode.value;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Configurações'),
+        backgroundColor: style.primary,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Text(
+            'Paleta de cores',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 12),
+          ...AppThemeService.presets.map((option) {
+            final selected = option.name == style.name;
+            return Card(
+              color: selected ? option.surface.withOpacity(0.9) : null,
+              child: ListTile(
+                leading: CircleAvatar(backgroundColor: option.primary),
+                title: Text(option.name),
+                subtitle: Text(
+                  'Fundo: ${(option.background.value.toRadixString(16))}',
+                ),
+                trailing: selected
+                    ? const Icon(Icons.check, color: Colors.green)
+                    : null,
+                onTap: () => AppThemeService.instance.setStyle(option),
+              ),
+            );
+          }),
+          const SizedBox(height: 20),
+          const Text(
+            'Modo',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            title: const Text('Dark mode'),
+            value: mode == ThemeMode.dark,
+            onChanged: (value) => AppThemeService.instance.setDarkMode(value),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Mostrar exemplo de botões',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(backgroundColor: style.button),
+              child: const Text('Ação primária'),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () {},
+              style: OutlinedButton.styleFrom(
+                foregroundColor: style.primary,
+                side: BorderSide(color: style.primary),
+              ),
+              child: const Text('Ação secundária'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -715,6 +1055,7 @@ class _ReceiptScreenState extends State<ReceiptScreen>
   late Animation<double> _scale;
   bool _printingLog = false;
   bool _printingGertec = false;
+  bool _printingAndroid = false;
 
   @override
   void initState() {
@@ -743,6 +1084,12 @@ class _ReceiptScreenState extends State<ReceiptScreen>
     setState(() => _printingGertec = true);
     await PrintService.imprimirGertec(context, widget.venda);
     if (mounted) setState(() => _printingGertec = false);
+  }
+
+  Future<void> _imprimirAndroidNativa() async {
+    setState(() => _printingAndroid = true);
+    await PrintService.imprimirAndroidNativa(context, widget.venda);
+    if (mounted) setState(() => _printingAndroid = false);
   }
 
   @override
@@ -957,12 +1304,53 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                             )
                           : const Icon(Icons.print_rounded, size: 18),
                       label: Text(
-                          _printingGertec
-                              ? 'Imprimindo...'
-                              : 'Imprimir Comprovante',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.5)),
+                        _printingGertec
+                            ? 'Imprimindo...'
+                            : 'Imprimir Comprovante',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Botão 3 — Impressora Nativa Android
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: _printingAndroid
+                          ? null
+                          : _imprimirAndroidNativa,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.15),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(color: Colors.white30),
+                        ),
+                        elevation: 0,
+                      ),
+                      icon: _printingAndroid
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.print, size: 18),
+                      label: Text(
+                        _printingAndroid
+                            ? 'Imprimindo nativo...'
+                            : 'Imprimir (Android Nativo)',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -1250,8 +1638,12 @@ class _Key extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appStyle = AppThemeService.instance.style.value;
+    final bgColor = bg ?? appStyle.button;
+    final fgColor = fg ?? Colors.white;
+
     return Material(
-      color: bg ?? Colors.white,
+      color: bgColor,
       borderRadius: BorderRadius.circular(10),
       elevation: 2,
       shadowColor: Colors.black.withOpacity(0.18),
@@ -1264,7 +1656,7 @@ class _Key extends StatelessWidget {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              color: fg ?? const Color(0xFF2D1060),
+              color: fgColor,
             ),
           ),
         ),

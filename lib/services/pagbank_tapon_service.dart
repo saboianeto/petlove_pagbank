@@ -1,6 +1,5 @@
 
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class PagbankTapOnConfig {
   PagbankTapOnConfig._();
@@ -80,16 +79,28 @@ class PagbankTapOnService {
         payload,
       );
 
-      if (result != null && result['status'] == 'success') {
+      final status = (result?['status'] ?? '').toString().toLowerCase();
+      final message =
+          result?['message']?.toString() ?? 'Resposta TAP ON indisponível';
+
+      if (status == 'success') {
         return PagbankTapOnResponse(
           success: true,
-          message: 'Pagamento aprovado',
-          transactionId: result['transactionId']?.toString(),
+          message: message,
+          transactionId: result?['transactionId']?.toString(),
         );
       }
+
+      if (status == 'canceled' || status == 'cancelled') {
+        return PagbankTapOnResponse(
+          success: false,
+          message: 'Pagamento cancelado: $message',
+        );
+      }
+
       return PagbankTapOnResponse(
         success: false,
-        message: result?['message']?.toString() ?? 'Falha na integração TAP ON',
+        message: 'Falha TAP ON: $message',
       );
     } on PlatformException catch (e) {
       return PagbankTapOnResponse(
@@ -97,45 +108,6 @@ class PagbankTapOnService {
         message: e.message ?? 'Erro TAP ON',
       );
     }
-  }
-
-  Future<PagbankTapOnResponse> startCreditPaymentWithDeepLink({
-    required String amount,
-    int installments = 1,
-  }) async {
-    final config = PagbankTapOnConfig.instance;
-    if (!config.isConfigured) {
-      return PagbankTapOnResponse(
-        success: false,
-        message: 'Configuração TAP ON não definida.',
-      );
-    }
-
-    final deepLink = Uri(
-      scheme: 'tapon',
-      host: 'pagbank',
-      queryParameters: {
-        'apiKey': config.apiKey,
-        'amount': amount,
-        'installments': installments.toString(),
-        'type': 'CREDIT',
-      },
-    );
-
-    final uri = deepLink.toString();
-
-    if (await canLaunchUrl(Uri.parse(uri))) {
-      await launchUrl(Uri.parse(uri));
-      return PagbankTapOnResponse(
-        success: true,
-        message: 'TAP ON aberto, aguarde confirmação no terminal PagBank.',
-      );
-    }
-
-    return PagbankTapOnResponse(
-      success: false,
-      message: 'TAP ON não disponível no dispositivo. Verifique instalação.',
-    );
   }
 
   Future<void> configureFromToasts({

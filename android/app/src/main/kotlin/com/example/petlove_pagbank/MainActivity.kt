@@ -1,10 +1,13 @@
 package com.example.petlove_pagbank
 
+import android.app.Activity
+import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.IBinder
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -13,9 +16,12 @@ import wangpos.sdk4.base.IBaseService
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "wangpos_printer"
+    private val TAPON_CHANNEL = "petlove_pagbank/pagbank_tapon"
+    private val TAPON_REQUEST_CODE = 9012
     private var baseService: IBaseService? = null
     private var pendingResult: MethodChannel.Result? = null
     private var pendingArgs: Map<String, Any?>? = null
+    private var pendingTapOnResult: MethodChannel.Result? = null
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -32,6 +38,7 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         bindWangPos()
+
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             if (call.method == "printReceipt") {
                 val args: Map<String, Any?> = mapOf(
@@ -51,6 +58,44 @@ class MainActivity : FlutterActivity() {
                 }
             } else {
                 result.notImplemented()
+            }
+        }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, TAPON_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "isTapOnAvailable" -> {
+                    val exists = packageManager.getLaunchIntentForPackage("br.com.pagseguro.tapon") != null
+                    result.success(exists)
+                }
+                "startTapOnPayment" -> {
+                    if (pendingTapOnResult != null) {
+                        result.error("TAPON_IN_PROGRESS", "Já existe uma operação TAP ON em andamento", null)
+                        return@setMethodCallHandler
+                    }
+
+                    val amount = call.argument<String>("amount") ?: "0"
+                    val installments = call.argument<Int>("installments") ?: 1
+                    val apiKey = call.argument<String>("apiKey") ?: ""
+                    val partnerId = call.argument<String>("partnerId")
+
+                    val uriBuilder = Uri.parse("tapon://pagbank/payment").buildUpon()
+                    uriBuilder.appendQueryParameter("type", "credit")
+                    uriBuilder.appendQueryParameter("amount", amount)
+                    uriBuilder.appendQueryParameter("installments", installments.toString())
+                    uriBuilder.appendQueryParameter("apiKey", apiKey)
+                    partnerId?.let { uriBuilder.appendQueryParameter("partnerId", it) }
+                    uriBuilder.appendQueryParameter("sandbox", call.argument<Boolean>("sandbox")?.toString() ?: "true")
+
+                    val intent = Intent(Intent.ACTION_VIEW, uriBuilder.build())
+
+                    if (intent.resolveActivity(packageManager) != null) {
+                        pendingTapOnResult = result
+                        startActivityForResult(intent, TAPON_REQUEST_CODE)
+                    } else {
+                        result.success(mapOf("status" to "failure", "message" to "TAP ON não encontrado"))
+                    }
+                }
+                else -> result.notImplemented()
             }
         }
     }
@@ -102,6 +147,37 @@ class MainActivity : FlutterActivity() {
             result.success("Comprovante impresso com sucesso!")
         } catch (e: Exception) {
             result.error("PRINT_ERROR", "Erro ao imprimir: ${e.message}", null)
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == TAPON_REQUEST_CODE) {
+            pendingTapOnResult?.let { result ->
+                when (resultCode) {
+                    Activity.RESULT_OK -> result.success(
+                        mapOf(
+                            "status" to "success",
+                            "message" to "Pagamento TAP ON aprovado",
+                            "transactionId" to (data?.getStringExtra("transactionId") ?: "")
+                        )
+                    )
+                    Activity.RESULT_CANCELED -> result.success(
+                        mapOf(
+                            "status" to "canceled",
+                            "message" to "Pagamento TAP ON cancelado pelo usuário"
+                        )
+                    )
+                    else -> result.success(
+                        mapOf(
+                            "status" to "failure",
+                            "message" to "Pagamento TAP ON finalizado com código $resultCode"
+                        )
+                    )
+                }
+                pendingTapOnResult = null
+            }
         }
     }
 
