@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.graphics.BitmapFactory
 import android.os.IBinder
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -14,7 +15,7 @@ class MainActivity : FlutterActivity() {
     private val CHANNEL = "wangpos_printer"
     private var baseService: IBaseService? = null
     private var pendingResult: MethodChannel.Result? = null
-    private var pendingArgs: Map<String, String>? = null
+    private var pendingArgs: Map<String, Any?>? = null
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -33,11 +34,12 @@ class MainActivity : FlutterActivity() {
         bindWangPos()
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             if (call.method == "printReceipt") {
-                val args = mapOf(
-                    "codigo"    to (call.argument<String>("codigo") ?: ""),
-                    "valor"     to (call.argument<String>("valor") ?: ""),
-                    "tipo"      to (call.argument<String>("tipo") ?: ""),
-                    "dataHora"  to (call.argument<String>("dataHora") ?: "")
+                val args: Map<String, Any?> = mapOf(
+                    "codigo"    to call.argument<String>("codigo"),
+                    "valor"     to call.argument<String>("valor"),
+                    "tipo"      to call.argument<String>("tipo"),
+                    "dataHora"  to call.argument<String>("dataHora"),
+                    "logoBytes" to call.argument<ByteArray>("logoBytes")
                 )
                 val service = baseService
                 if (service != null) {
@@ -60,22 +62,31 @@ class MainActivity : FlutterActivity() {
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
-    private fun doPrint(args: Map<String, String>, result: MethodChannel.Result) {
+    private fun doPrint(args: Map<String, Any?>, result: MethodChannel.Result) {
         try {
             val service = baseService ?: run {
                 result.error("SERVICE_NOT_BOUND", "Servico WangPOS nao conectado.", null)
                 return
             }
 
-            val codigo   = args["codigo"] ?: ""
-            val valor    = args["valor"] ?: ""
-            val tipo     = args["tipo"] ?: ""
-            val dataHora = args["dataHora"] ?: ""
+            val codigo    = args["codigo"]    as? String ?: ""
+            val valor     = args["valor"]     as? String ?: ""
+            val tipo      = args["tipo"]      as? String ?: ""
+            val dataHora  = args["dataHora"]  as? String ?: ""
+            val logoBytes = args["logoBytes"] as? ByteArray
 
-            // fontSize: 24=normal, align: 0=left, 1=center, 2=right
             service.printInit()
+
+            // Logo
+            if (logoBytes != null) {
+                val logoBitmap = BitmapFactory.decodeByteArray(logoBytes, 0, logoBytes.size)
+                if (logoBitmap != null) {
+                    service.printImage(logoBitmap, logoBitmap.height, 1) // 1 = center
+                }
+            }
+
+            // Corpo do comprovante
             service.printString("================================", 24, 1, false, false)
-            service.printString("        petlove", 28, 1, true, false)
             service.printString("  COMPROVANTE DE PAGAMENTO", 20, 1, false, false)
             service.printString("================================", 24, 1, false, false)
             service.printString("Codigo  : #$codigo", 22, 0, false, false)

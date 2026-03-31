@@ -127,11 +127,16 @@ class PrintService {
   static Future<void> imprimirGertec(
       BuildContext context, Venda venda) async {
     try {
+      final ByteData logoData =
+          await rootBundle.load('assets/images/petlove_logo.png');
+      final Uint8List logoBytes = logoData.buffer.asUint8List();
+
       final String result = await _channel.invokeMethod('printReceipt', {
-        'codigo':   venda.codigo,
-        'valor':    venda.valor,
-        'tipo':     venda.tipo,
-        'dataHora': venda.dataHoraFormatada,
+        'codigo':     venda.codigo,
+        'valor':      venda.valor,
+        'tipo':       venda.tipo,
+        'dataHora':   venda.dataHoraFormatada,
+        'logoBytes':  logoBytes,
       });
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
