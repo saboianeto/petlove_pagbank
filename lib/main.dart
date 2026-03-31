@@ -121,52 +121,32 @@ class PrintService {
     }
   }
 
-  /// Impressão REAL via Gertec GPOS720
-  /// Requer package: gertec: ^0.0.9 no pubspec.yaml
-  /// Só funciona no dispositivo físico GPOS720
+  /// Impressão REAL via WangPOS AIDL (Gertec GPOS780)
+  static const _channel = MethodChannel('wangpos_printer');
+
   static Future<void> imprimirGertec(
       BuildContext context, Venda venda) async {
     try {
-      // ── GERTEC REAL ──────────────────────────────
-      // Descomente abaixo quando rodar no GPOS720:
-      //
-      // import 'package:gertec/gertec.dart';
-      //
-      // final printer = GertecPrinter();
-      // await printer.startTransaction();
-      // await printer.printText('================================');
-      // await printer.printText('         petlove               ');
-      // await printer.printText('   COMPROVANTE DE PAGAMENTO    ');
-      // await printer.printText('================================');
-      // await printer.printText('Codigo  : #${venda.codigo}');
-      // await printer.printText('Data    : ${venda.dataHoraFormatada}');
-      // await printer.printText('Tipo    : ${venda.tipo}');
-      // await printer.printText('Status  : APROVADO');
-      // await printer.printText('--------------------------------');
-      // await printer.printText('TOTAL   : R\$ ${venda.valor}');
-      // await printer.printText('================================');
-      // await printer.wrapLine(3);
-      // await printer.cutPaper();
-      // await printer.finishTransaction();
-      // ─────────────────────────────────────────────
-
-      // Simulação para desenvolvimento no Chrome/Windows:
-      await Future.delayed(const Duration(seconds: 2));
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                '⚠️ Gertec GPOS720: disponível apenas no terminal físico'),
-            backgroundColor: Color(0xFFE8901A),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
+      final String result = await _channel.invokeMethod('printReceipt', {
+        'codigo':   venda.codigo,
+        'valor':    venda.valor,
+        'tipo':     venda.tipo,
+        'dataHora': venda.dataHoraFormatada,
+      });
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro impressora Gertec: $e'),
+            content: Text(result),
+            backgroundColor: const Color(0xFF1A7A4A),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } on PlatformException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro impressora: ${e.message}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -821,7 +801,7 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                       label: Text(
                           _printingGertec
                               ? 'Imprimindo...'
-                              : 'Imprimir — GPOS720',
+                              : 'Imprimir Comprovante',
                           style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.5)),
