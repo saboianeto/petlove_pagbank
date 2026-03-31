@@ -80,30 +80,30 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  gertec:
-    dependency: "direct main"
+  http:
+    dependency: transitive
     description:
-      name: gertec
-      sha256: "2f15052f996550ae95e1f8a99715459c296e5c88058c155df838d675467f1bae"
+      name: http
+      sha256: "87721a4a50b19c7f1d49001e51409bddc46303966ce89a65af4f4e6004896412"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.9"
-  gertec_pos_printer:
-    dependency: "direct main"
+    version: "1.6.0"
+  http_parser:
+    dependency: transitive
     description:
-      name: gertec_pos_printer
-      sha256: "62f4558ec58dc9c3310afee88d29e58e3ed528a9c51640e8fd3d027c51756a06"
+      name: http_parser
+      sha256: "178d74305e7866013777bab2c3d8726205dc5a4dd935297175b19a23a2e66571"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.4"
-  gpos720_printer:
-    dependency: "direct main"
+    version: "4.1.2"
+  image:
+    dependency: transitive
     description:
-      name: gpos720_printer
-      sha256: "97571ff74ae50ba4810f2938865f87492bb204828639a5a09caf2536cda66fe9"
+      name: image
+      sha256: f9881ff4998044947ec38d098bc7c8316ae1186fa786eddffdb867b9bc94dfce
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.2"
+    version: "4.8.0"
   leak_tracker:
     dependency: transitive
     description:
