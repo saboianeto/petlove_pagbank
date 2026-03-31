@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'services/pagbank_tapon_service.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-  ));
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+    ),
+  );
   runApp(const PetlovePOSApp());
 }
 
@@ -50,14 +54,16 @@ class VendasStore {
 class PrintService {
   /// Impressão SIMULADA (log / popup)
   static Future<void> imprimirSimulado(
-      BuildContext context, Venda venda) async {
+    BuildContext context,
+    Venda venda,
+  ) async {
     await Future.delayed(const Duration(milliseconds: 1500));
 
     final linhas = [
       '================================',
       '         petlove♥               '
-      '   COMPROVANTE DE PAGAMENTO     '
-      '================================',
+          '   COMPROVANTE DE PAGAMENTO     '
+          '================================',
       'Código  : #${venda.codigo}',
       'Data    : ${venda.dataHoraFormatada}',
       'Tipo    : ${venda.tipo}',
@@ -72,14 +78,17 @@ class PrintService {
         context: context,
         builder: (_) => AlertDialog(
           backgroundColor: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Row(
             children: [
               Icon(Icons.receipt_long_rounded, color: Color(0xFF2D1060)),
               SizedBox(width: 8),
-              Text('Prévia da Impressão',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+              Text(
+                'Prévia da Impressão',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
             ],
           ),
           content: Container(
@@ -101,8 +110,10 @@ class PrintService {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Fechar',
-                  style: TextStyle(color: Color(0xFF2D1060))),
+              child: const Text(
+                'Fechar',
+                style: TextStyle(color: Color(0xFF2D1060)),
+              ),
             ),
             ElevatedButton.icon(
               onPressed: () => Navigator.of(context).pop(),
@@ -110,7 +121,8 @@ class PrintService {
                 backgroundColor: const Color(0xFF1A7A4A),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               icon: const Icon(Icons.check, size: 16),
               label: const Text('OK'),
@@ -124,8 +136,7 @@ class PrintService {
   /// Impressão REAL via Gertec GPOS720
   /// Requer package: gertec: ^0.0.9 no pubspec.yaml
   /// Só funciona no dispositivo físico GPOS720
-  static Future<void> imprimirGertec(
-      BuildContext context, Venda venda) async {
+  static Future<void> imprimirGertec(BuildContext context, Venda venda) async {
     try {
       // ── GERTEC REAL ──────────────────────────────
       // Descomente abaixo quando rodar no GPOS720:
@@ -156,7 +167,8 @@ class PrintService {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-                '⚠️ Gertec GPOS720: disponível apenas no terminal físico'),
+              '⚠️ Gertec GPOS720: disponível apenas no terminal físico',
+            ),
             backgroundColor: Color(0xFFE8901A),
             duration: Duration(seconds: 3),
           ),
@@ -214,15 +226,20 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1000));
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
     _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
-    _scale = Tween(begin: 0.85, end: 1.0)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
+    _scale = Tween(
+      begin: 0.85,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
     _ctrl.forward();
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HomeScreen()));
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
       }
     });
   }
@@ -251,7 +268,9 @@ class _SplashScreenState extends State<SplashScreen>
                   width: 28,
                   height: 28,
                   child: CircularProgressIndicator(
-                      color: Color(0xFFE8445A), strokeWidth: 2.5),
+                    color: Color(0xFFE8445A),
+                    strokeWidth: 2.5,
+                  ),
                 ),
               ],
             ),
@@ -278,12 +297,13 @@ class _HomeScreenState extends State<HomeScreen> {
   String get _valor => _formatValue(_raw);
 
   void _digit(String d) => setState(() {
-        final n = _raw + d;
-        _raw = n.length > 8 ? n.substring(n.length - 8) : n;
-      });
+    final n = _raw + d;
+    _raw = n.length > 8 ? n.substring(n.length - 8) : n;
+  });
 
   void _back() => setState(
-      () => _raw = _raw.isEmpty ? '' : _raw.substring(0, _raw.length - 1));
+    () => _raw = _raw.isEmpty ? '' : _raw.substring(0, _raw.length - 1),
+  );
 
   void _clear() => setState(() => _raw = '');
 
@@ -307,8 +327,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _cobrar() {
     if (_raw.isEmpty) return;
     Navigator.of(context)
-        .push(MaterialPageRoute(
-            builder: (_) => PaymentScreen(valor: _valor)))
+        .push(MaterialPageRoute(builder: (_) => PaymentScreen(valor: _valor)))
         .then((_) => _clear());
   }
 
@@ -327,49 +346,69 @@ class _HomeScreenState extends State<HomeScreen> {
             // HEADER
             Container(
               color: const Color(0xFF2D1060),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GestureDetector(
-                      onTap: _clear,
-                      child: const PetloveLogo(dark: false)),
-                  Row(children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(_timeNow(),
+                    onTap: _clear,
+                    child: const PetloveLogo(dark: false),
+                  ),
+                  Row(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            _timeNow(),
                             style: const TextStyle(
-                                color: Colors.white60, fontSize: 11)),
-                        const Text('Terminal POS',
-                            style: TextStyle(
-                                color: Colors.white, fontSize: 11)),
-                      ],
-                    ),
-                    const SizedBox(width: 10),
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (_) => const HistoricoScreen())),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Row(children: [
-                          Icon(Icons.history_rounded,
-                              color: Colors.white, size: 15),
-                          SizedBox(width: 4),
-                          Text('Histórico',
-                              style: TextStyle(
-                                  color: Colors.white, fontSize: 12)),
-                        ]),
+                              color: Colors.white60,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const Text(
+                            'Terminal POS',
+                            style: TextStyle(color: Colors.white, fontSize: 11),
+                          ),
+                        ],
                       ),
-                    ),
-                  ]),
+                      const SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const HistoricoScreen(),
+                          ),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(
+                                Icons.history_rounded,
+                                color: Colors.white,
+                                size: 15,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'Histórico',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -378,32 +417,41 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               color: const Color(0xFF3D1A6E),
               width: double.infinity,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text('VALOR A COBRAR',
-                      style: TextStyle(
-                          color: Colors.white54,
-                          fontSize: 10,
-                          letterSpacing: 2)),
+                  const Text(
+                    'VALOR A COBRAR',
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 10,
+                      letterSpacing: 2,
+                    ),
+                  ),
                   const SizedBox(height: 2),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
-                      const Text('R\$ ', style: TextStyle(
-                              color: Colors.white60,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w300)),
-                      Text(_valor,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 42,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -1)),
+                      const Text(
+                        'R\$ ',
+                        style: TextStyle(
+                          color: Colors.white60,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w300,
+                        ),
+                      ),
+                      Text(
+                        _valor,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 42,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -1,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -428,20 +476,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           ])
                             Expanded(
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.only(bottom: 8),
                                 child: Row(
                                   children: row
-                                      .map((d) => Expanded(
-                                            child: Padding(
-                                              padding: EdgeInsets.only(
-                                                  right: d != row.last
-                                                      ? 8
-                                                      : 0),
-                                              child: _Key(d,
-                                                  () => _digit(d)),
+                                      .map(
+                                        (d) => Expanded(
+                                          child: Padding(
+                                            padding: EdgeInsets.only(
+                                              right: d != row.last ? 8 : 0,
                                             ),
-                                          ))
+                                            child: _Key(d, () => _digit(d)),
+                                          ),
+                                        ),
+                                      )
                                       .toList(),
                                 ),
                               ),
@@ -451,17 +498,24 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Row(
                               children: [
                                 Expanded(
-                                    child: _Key('C', _clear,
-                                        bg: const Color(0xFFE8445A),
-                                        fg: Colors.white)),
+                                  child: _Key(
+                                    'C',
+                                    _clear,
+                                    bg: const Color(0xFFE8445A),
+                                    fg: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(child: _Key('0', () => _digit('0'))),
                                 const SizedBox(width: 8),
                                 Expanded(
-                                    child: _Key('0', () => _digit('0'))),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                    child: _Key('⌫', _back,
-                                        bg: const Color(0xFF999999),
-                                        fg: Colors.white)),
+                                  child: _Key(
+                                    '⌫',
+                                    _back,
+                                    bg: const Color(0xFF999999),
+                                    fg: Colors.white,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -479,14 +533,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           backgroundColor: const Color(0xFF2D1060),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           elevation: 3,
                         ),
-                        child: const Text('COBRAR',
-                            style: TextStyle(
-                                fontSize: 19,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 3)),
+                        child: const Text(
+                          'COBRAR',
+                          style: TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 3,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -516,7 +574,36 @@ class PaymentScreen extends StatelessWidget {
     );
     VendasStore().add(v);
     Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => ReceiptScreen(venda: v)));
+      MaterialPageRoute(builder: (_) => ReceiptScreen(venda: v)),
+    );
+  }
+
+  Future<void> _handleCreditTapOn(BuildContext context) async {
+    final srv = PagbankTapOnService.instance;
+
+    if (!PagbankTapOnConfig.instance.isConfigured) {
+      // placeholder, troque pela chave real quando disponível.
+      PagbankTapOnConfig.instance.configure(
+        apiKey: 'COLOQUE_SUA_CHAVE_AQUI',
+        partnerId: 'SEU_PARTNER_ID',
+        sandbox: true,
+      );
+    }
+
+    final response = await srv.startCreditPayment(amount: valor);
+
+    if (!response.success) {
+      final snack = SnackBar(
+        content: Text('TAP ON CRÉDITO: ${response.message}'),
+        backgroundColor: Colors.red,
+      );
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(snack);
+      return;
+    }
+
+    if (context.mounted) {
+      _finalizar(context, 'CREDIT TAP ON');
+    }
   }
 
   @override
@@ -538,27 +625,37 @@ class PaymentScreen extends StatelessWidget {
           child: Column(
             children: [
               const SizedBox(height: 16),
-              const Text('FORMA DE PAGAMENTO',
-                  style: TextStyle(
-                      color: Color(0xFF2D1060),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 2)),
+              const Text(
+                'FORMA DE PAGAMENTO',
+                style: TextStyle(
+                  color: Color(0xFF2D1060),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 2,
+                ),
+              ),
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  const Text('R\$ ', style: TextStyle(
-                          color: Color(0xFF666666),
-                          fontSize: 18,
-                          fontWeight: FontWeight.w300)),
-                  Text(valor,
-                      style: const TextStyle(
-                          color: Color(0xFF2D1060),
-                          fontSize: 38,
-                          fontWeight: FontWeight.w800)),
+                  const Text(
+                    'R\$ ',
+                    style: TextStyle(
+                      color: Color(0xFF666666),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  ),
+                  Text(
+                    valor,
+                    style: const TextStyle(
+                      color: Color(0xFF2D1060),
+                      fontSize: 38,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 36),
@@ -567,7 +664,7 @@ class PaymentScreen extends StatelessWidget {
                 label: 'CRÉDITO',
                 sub: 'À vista ou parcelado',
                 color: const Color(0xFF2D1060),
-                onTap: () => _finalizar(context, 'CRÉDITO'),
+                onTap: () => _handleCreditTapOn(context),
               ),
               const SizedBox(height: 14),
               _PayOption(
@@ -580,8 +677,10 @@ class PaymentScreen extends StatelessWidget {
               const Spacer(),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancelar',
-                    style: TextStyle(color: Color(0xFFE8445A))),
+                child: const Text(
+                  'Cancelar',
+                  style: TextStyle(color: Color(0xFFE8445A)),
+                ),
               ),
             ],
           ),
@@ -613,7 +712,9 @@ class _ReceiptScreenState extends State<ReceiptScreen>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 700));
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
     _scale = CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut);
     _ctrl.forward();
   }
@@ -654,23 +755,31 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                       width: 68,
                       height: 68,
                       decoration: const BoxDecoration(
-                          color: Color(0xFF1A7A4A),
-                          shape: BoxShape.circle),
-                      child: const Icon(Icons.check_rounded,
-                          color: Colors.white, size: 42),
+                        color: Color(0xFF1A7A4A),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 42,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text('TRANSAÇÃO APROVADA',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 2)),
+                  const Text(
+                    'TRANSAÇÃO APROVADA',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 2,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  const Text('Pagamento realizado com sucesso',
-                      style:
-                          TextStyle(color: Colors.white54, fontSize: 12)),
+                  const Text(
+                    'Pagamento realizado com sucesso',
+                    style: TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
                 ],
               ),
             ),
@@ -684,9 +793,10 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8))
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
                   ],
                 ),
                 child: Column(
@@ -696,17 +806,21 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                       decoration: const BoxDecoration(
                         color: Color(0xFFF8F4FF),
                         borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(20)),
+                          top: Radius.circular(20),
+                        ),
                       ),
                       child: const Column(
                         children: [
                           PetloveLogo(),
                           SizedBox(height: 2),
-                          Text('COMPROVANTE DE PAGAMENTO',
-                              style: TextStyle(
-                                  fontSize: 9,
-                                  letterSpacing: 1.5,
-                                  color: Color(0xFF999999))),
+                          Text(
+                            'COMPROVANTE DE PAGAMENTO',
+                            style: TextStyle(
+                              fontSize: 9,
+                              letterSpacing: 1.5,
+                              color: Color(0xFF999999),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -716,35 +830,46 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                         padding: const EdgeInsets.all(18),
                         child: Column(
                           children: [
-                            _Row('Data/Hora',
-                                widget.venda.dataHoraFormatada),
+                            _Row('Data/Hora', widget.venda.dataHoraFormatada),
                             _Row('Código', '#${widget.venda.codigo}'),
                             _Row('Tipo', widget.venda.tipo),
-                            _Row('Status', '✓ APROVADO',
-                                vc: const Color(0xFF1A7A4A)),
+                            _Row(
+                              'Status',
+                              '✓ APROVADO',
+                              vc: const Color(0xFF1A7A4A),
+                            ),
                             const Divider(height: 20),
                             Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('TOTAL',
-                                    style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF2D1060))),
+                                const Text(
+                                  'TOTAL',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF2D1060),
+                                  ),
+                                ),
                                 Row(
                                   crossAxisAlignment:
                                       CrossAxisAlignment.baseline,
                                   textBaseline: TextBaseline.alphabetic,
                                   children: [
-                                    const Text('R\$ ', style: TextStyle(
-                                            fontSize: 13,
-                                            color: Color(0xFF666666))),
-                                    Text(widget.venda.valor,
-                                        style: const TextStyle(
-                                            fontSize: 26,
-                                            fontWeight: FontWeight.w800,
-                                            color: Color(0xFF2D1060))),
+                                    const Text(
+                                      'R\$ ',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFF666666),
+                                      ),
+                                    ),
+                                    Text(
+                                      widget.venda.valor,
+                                      style: const TextStyle(
+                                        fontSize: 26,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF2D1060),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],
@@ -774,7 +899,8 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                         backgroundColor: Colors.white,
                         foregroundColor: const Color(0xFF2D1060),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         elevation: 0,
                       ),
                       icon: _printingLog
@@ -782,14 +908,18 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Color(0xFF2D1060)))
+                                strokeWidth: 2,
+                                color: Color(0xFF2D1060),
+                              ),
+                            )
                           : const Icon(Icons.preview_rounded, size: 18),
                       label: Text(
-                          _printingLog ? 'Gerando...' : 'Prévia (Log)',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.5)),
+                        _printingLog ? 'Gerando...' : 'Prévia (Log)',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -798,16 +928,14 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton.icon(
-                      onPressed:
-                          _printingGertec ? null : _imprimirGertec,
+                      onPressed: _printingGertec ? null : _imprimirGertec,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.white.withValues(alpha: 0.15),
+                        backgroundColor: Colors.white.withValues(alpha: 0.15),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: const BorderSide(
-                                color: Colors.white30)),
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(color: Colors.white30),
+                        ),
                         elevation: 0,
                       ),
                       icon: _printingGertec
@@ -815,16 +943,20 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white))
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
                           : const Icon(Icons.print_rounded, size: 18),
                       label: Text(
-                          _printingGertec
-                              ? 'Imprimindo...'
-                              : 'Imprimir — GPOS720',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.5)),
+                        _printingGertec
+                            ? 'Imprimindo...'
+                            : 'Imprimir — GPOS720',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -839,13 +971,17 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                         backgroundColor: const Color(0xFFE8445A),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         elevation: 0,
                       ),
-                      child: const Text('NOVA COBRANÇA',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1)),
+                      child: const Text(
+                        'NOVA COBRANÇA',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -872,19 +1008,30 @@ class HistoricoScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF2D1060),
         foregroundColor: Colors.white,
-        title: const Text('Histórico de Vendas',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        title: const Text(
+          'Histórico de Vendas',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
         elevation: 0,
       ),
       body: vendas.isEmpty
           ? const Center(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.receipt_long_rounded,
-                    size: 64, color: Color(0xFFCCCCCC)),
-                SizedBox(height: 12),
-                Text('Nenhuma venda realizada ainda',
-                    style: TextStyle(color: Color(0xFF999999))),
-              ]))
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.receipt_long_rounded,
+                    size: 64,
+                    color: Color(0xFFCCCCCC),
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    'Nenhuma venda realizada ainda',
+                    style: TextStyle(color: Color(0xFF999999)),
+                  ),
+                ],
+              ),
+            )
           : ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: vendas.length,
@@ -898,17 +1045,22 @@ class HistoricoScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2))
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
                     ],
                   ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (_) => ReceiptScreen(venda: v))),
+                      MaterialPageRoute(
+                        builder: (_) => ReceiptScreen(venda: v),
+                      ),
+                    ),
                     leading: Container(
                       width: 44,
                       height: 44,
@@ -928,43 +1080,59 @@ class HistoricoScreen extends StatelessWidget {
                         size: 22,
                       ),
                     ),
-                    title: Row(children: [
-                      Text('R\$ ${v.valor}',
+                    title: Row(
+                      children: [
+                        Text(
+                          'R\$ ${v.valor}',
                           style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 16,
-                              color: Color(0xFF2D1060))),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: isC
-                              ? const Color(0xFF2D1060)
-                              : const Color(0xFF1A7A4A),
-                          borderRadius: BorderRadius.circular(4),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            color: Color(0xFF2D1060),
+                          ),
                         ),
-                        child: Text(v.tipo,
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isC
+                                ? const Color(0xFF2D1060)
+                                : const Color(0xFF1A7A4A),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            v.tipo,
                             style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1)),
-                      ),
-                    ]),
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     subtitle: Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('#${v.codigo}',
-                              style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF999999))),
-                          Text(v.dataHoraFormatada,
-                              style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF999999))),
+                          Text(
+                            '#${v.codigo}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF999999),
+                            ),
+                          ),
+                          Text(
+                            v.dataHoraFormatada,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF999999),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1012,9 +1180,11 @@ class _PrintButtonState extends State<_PrintButton> {
                 width: 16,
                 height: 16,
                 child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white))
-            : const Icon(Icons.print_rounded,
-                color: Colors.white, size: 18),
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Icon(Icons.print_rounded, color: Colors.white, size: 18),
       ),
     );
   }
@@ -1031,19 +1201,26 @@ class PetloveLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RichText(
-      text: TextSpan(children: [
-        TextSpan(
+      text: TextSpan(
+        children: [
+          TextSpan(
             text: 'petlove',
             style: TextStyle(
-                color: dark ? const Color(0xFF2D1060) : Colors.white,
-                fontSize: size,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5)),
-        TextSpan(
+              color: dark ? const Color(0xFF2D1060) : Colors.white,
+              fontSize: size,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
+            ),
+          ),
+          TextSpan(
             text: '♥',
             style: TextStyle(
-                color: const Color(0xFFE8445A), fontSize: size * 0.8)),
-      ]),
+              color: const Color(0xFFE8445A),
+              fontSize: size * 0.8,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1066,11 +1243,14 @@ class _Key extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
         child: Center(
-          child: Text(label,
-              style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: fg ?? const Color(0xFF2D1060))),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: fg ?? const Color(0xFF2D1060),
+            ),
+          ),
         ),
       ),
     );
@@ -1083,12 +1263,13 @@ class _PayOption extends StatelessWidget {
   final String sub;
   final Color color;
   final VoidCallback onTap;
-  const _PayOption(
-      {required this.icon,
-      required this.label,
-      required this.sub,
-      required this.color,
-      required this.onTap});
+  const _PayOption({
+    required this.icon,
+    required this.label,
+    required this.sub,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1101,24 +1282,36 @@ class _PayOption extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-          child: Row(children: [
-            Icon(icon, color: Colors.white, size: 32),
-            const SizedBox(width: 18),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(label,
-                  style: const TextStyle(
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.white, size: 32),
+              const SizedBox(width: 18),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: 2)),
-              Text(sub,
-                  style: const TextStyle(
-                      color: Colors.white70, fontSize: 12)),
-            ]),
-            const Spacer(),
-            const Icon(Icons.chevron_right_rounded,
-                color: Colors.white54, size: 26),
-          ]),
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  Text(
+                    sub,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.white54,
+                size: 26,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1138,14 +1331,18 @@ class _Row extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(l,
-              style: const TextStyle(
-                  fontSize: 12, color: Color(0xFF888888))),
-          Text(v,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: vc ?? const Color(0xFF333333))),
+          Text(
+            l,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF888888)),
+          ),
+          Text(
+            v,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: vc ?? const Color(0xFF333333),
+            ),
+          ),
         ],
       ),
     );
