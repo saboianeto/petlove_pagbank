@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:petlove_pagbank/services/pagbank_tapon_service.dart';
+import 'package:petlove_pagbank/theme_provider.dart';
+import 'package:provider/provider.dart';
 
-import 'services/pagbank_tapon_service.dart';
+import 'settings_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -180,14 +183,34 @@ class PetlovePOSApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Petlove POS',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF3D1A6E)),
-        useMaterial3: true,
+    return ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'Petlove POS',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              primaryColor: themeProvider.primaryColor,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: themeProvider.primaryColor,
+                brightness: Brightness.light,
+              ),
+              useMaterial3: true,
+            ),
+            darkTheme: ThemeData(
+              primaryColor: themeProvider.primaryColor,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: themeProvider.primaryColor,
+                brightness: Brightness.dark,
+              ),
+              useMaterial3: true,
+            ),
+            themeMode: themeProvider.themeMode,
+            home: const SplashScreen(),
+          );
+        },
       ),
-      home: const SplashScreen(),
     );
   }
 }
@@ -370,7 +393,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
+                            color: Colors.white.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Row(
@@ -778,7 +801,7 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
+                      color: Colors.black.withOpacity(0.3),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -915,7 +938,7 @@ class _ReceiptScreenState extends State<ReceiptScreen>
                     child: ElevatedButton.icon(
                       onPressed: _printingGertec ? null : _imprimirGertec,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.15),
+                        backgroundColor: Colors.white.withOpacity(0.15),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -995,6 +1018,16 @@ class HistoricoScreen extends StatelessWidget {
           'Histórico de Vendas',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+            },
+          ),
+        ],
         elevation: 0,
       ),
       body: vendas.isEmpty
@@ -1018,7 +1051,7 @@ class HistoricoScreen extends StatelessWidget {
           : ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: vendas.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (_, i) {
                 final v = vendas[i];
                 final isC = v.tipo == 'CRÉDITO';
@@ -1028,7 +1061,7 @@ class HistoricoScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
+                        color: Colors.black.withOpacity(0.06),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -1221,7 +1254,7 @@ class _Key extends StatelessWidget {
       color: bg ?? Colors.white,
       borderRadius: BorderRadius.circular(10),
       elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.18),
+      shadowColor: Colors.black.withOpacity(0.18),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),

@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.petlove_pagbank"
-    compileSdk = 34
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
